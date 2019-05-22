@@ -47,7 +47,8 @@ remove_samples<-function(datatable){
                         "NK2171_HC_X_WCL_009.fcs",
                         "NK2162_HC_X_SEA_023.fcs")
     #then you filter the datatable so that any row that has that sample name is removed
-    datatable<-filter(datatable, !(Sample %in% excluded_samples))
+    datatable<-filter(datatable, !(Sample %in% excluded_samples))%>%
+        filter(Donor!="NK2325")
     datatable
 }
 
@@ -60,3 +61,10 @@ fix.names<-function(datatable){
         sep="_")
     datatable
 }
+
+
+changeTB<-function(datatable){
+    datatable$TB[datatable$Donor=="NK2813"]<-as.character("HC")
+    datatable
+}
+
