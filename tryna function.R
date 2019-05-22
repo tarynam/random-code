@@ -1,6 +1,7 @@
 #documentation and examples for these functions are in their individual script files
 
 class_change<-function(datatable){
+    library(dplyr)
     y<-dplyr::select(datatable, Sample, Donor, TB, SM, Stim)
     x<-dplyr::select(datatable, -Sample, -Donor, -TB, -SM, -Stim)
     for(i in 1:length(x)){x[[i]]<-as.numeric(as.character(x[[i]]))}
