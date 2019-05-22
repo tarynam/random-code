@@ -1,0 +1,145 @@
+---
+title: "Untitled"
+author: "Taryn McLaughlin"
+date: "5/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(gplots)
+library(ggfortify)
+library(RColorBrewer)
+library(data.table)
+library(ggpubr)
+library(pcaMethods)
+library(cluster)
+library(knitr)
+library(heatmap.plus)
+#Generate some data so you don't have to use my actual data because it's a mess
+data(diamonds)
+dfd<-diamonds
+dfd<-dplyr::select(diamonds, -cut, -color, -clarity)
+rows<-sample(1:53940, 100)
+dfd<-dfd[rows,]
+dfd<-data.matrix(dfd)
+
+lum<-read.csv("/Users/tarynam/Desktop/TH1 TH2_Taryn/Luminex_combined_background.txt")
+lum<-dplyr::select(lum, -X)
+lum$order<-paste(lum$SM, lum$Stim) 
+lum<-dplyr::arrange(lum, order) #so that the matrix is ordered first by SM and then within by Stim
+rownames(lum)<-lum$Sample #so that you have the metadata when you extract the matrix
+```
+
+#Heatmap.2
+```{r, fig.width=20, fig.height=15}
+df<-data.matrix(lum[,2:10])
+heatmap.2(df, col=bluered(20))
+```
+
+#Transposing the whole heatmap
+Those stupid blue lines are trace lines which are basically a histogram and I think it's distracting.
+I like them transposed so this set all has cytokines as rows and samples along the top
+Z-scores are centered and normalized, so the user can interpret a color as 𝑥 standard deviations from the mean and have an intuitive idea of the relative variation of that value.
+Data is scaled within each cytokine only.
+```{r, fig.width=20, fig.height=15}
+heatmap.2(t(df), trace= "none", labCol = FALSE, col=bluered(20))
+heatmap.2(t(df), trace= "none", labCol = FALSE, col=bluered(20), scale = "row")
+```
+
+#Color coding
+I will eventually add in legends for these colors but whatever
+```{r, fig.width=20, fig.height=15}
+SM_colors <- unlist(lapply(rownames(df),function(x){
+    if(grepl("X",x)) 'black' #if the rowname has X in it it becomes red
+    else if(grepl('SM',x)) 'white' #if the rowname has SM it becomes green
+    
+}))
+Stim_colors <- unlist(lapply(rownames(df), function(x){
+    if(grepl("SEB",x)) {'#E7B800'} #if the rowname has X in it it becomes red
+    else if (grepl('WCL', x)) {'#FC4E07'}#if the rowname has SM it becomes green
+    else if (grepl('PEP', x)) {'#C70039'}
+    else if (grepl('SEA', x)) {'#581845'}
+    else if (grepl('SWAP', x)) {'#00AFBB'}
+}
+)
+)
+my_colors<-cbind(SM_colors, Stim_colors)
+```
+
+To do single color coding you can use heatmap.2 but to have two levels of color coding you have to use heatmap.plus but then I lose both the scaling and they key which is annoying.
+```{r, fig.width=20, fig.height=15}
+heatmap.2(t(df), trace= "none", labCol = FALSE,
+          col=bluered(20), scale = "row", ColSideColors = SM_colors)
+heatmap.2(t(df), trace= "none", labCol = FALSE,
+          col=bluered(20), scale = "row", ColSideColors = Stim_colors)
+#Theres no trace in heatmap plus
+heatmap.plus(t(df), labCol = FALSE,
+             col=bluered(20), scale = "row", ColSideColors = my_colors)
+```
+
+#Other kinds of clustering
+##No clustering
+Which by default force clusters by SM and Stim
+I switched back to heatmap.2 to get scaling and keys
+```{r, fig.width=20, fig.height=15}
+heatmap.2(t(df), labCol = FALSE, trace = "none", col=bluered(20), 
+             Rowv= FALSE, Colv = FALSE, scale = "row", 
+             ColSideColors = Stim_colors)
+```
+
+##Cytokine clustering
+```{r, fig.width=20, fig.height=15}
+heatmap.2(t(df), labCol = FALSE,  trace = "none", col=bluered(20), 
+             Colv = FALSE, scale = "row", 
+             ColSideColors = Stim_colors)
+```
+
+#Alternatives to hclust
+Okay now this is when we pass different arguments to how the clustering is done and what distance function is used. You will see how different things look based on this.
+For a bit more reading check out this discussion thread:
+https://stats.stackexchange.com/questions/195446/choosing-the-right-linkage-method-for-hierarchical-clustering
+
+```{r, fig.width=20, fig.height=15}
+heatmap.2(t(df), labCol = FALSE,  trace = "none", col=bluered(20),
+             scale = "row", 
+             ColSideColors = Stim_colors,
+             hclustfun = (function(x) hclust(x, method="complete"))
+)
+```
+
+```{r, fig.width=20, fig.height=15}
+heatmap.2(t(df), labCol = FALSE,  trace = "none", col=bluered(20),
+             scale = "row", 
+             ColSideColors = Stim_colors,
+             hclustfun = (function(x) hclust(x, method="average"))
+)
+```
+
+```{r, fig.width=20, fig.height=15}
+heatmap.2(t(df), labCol = FALSE,  trace = "none", col=bluered(20),
+             scale = "row", 
+             ColSideColors = Stim_colors,
+             hclustfun = (function(x) hclust(x, method="centroid"))
+)
+```
+
+You can also force order the heatmap by a dendrogram created elsewhere as long as it's stored as a dendrogram object.
+So here I make a dendrogram for the cytokines using their correlation values as the distance measure. This takes patterns in all the data into account as opposed to just using the literal distance between points. Plus it kind of makes sense when you see what clusters together.
+```{r, fig.width=20, fig.height=15}
+kable(cor(df))
+hc <- hclust(as.dist(1-cor(df)))
+plot(hc)
+test<-as.dendrogram(hc)
+heatmap.2(t(df), labCol = FALSE,  trace = "none", col=bluered(20),
+             scale = "row", 
+             Rowv = test,
+             ColSideColors = Stim_colors,
+             hclustfun = (function(x) hclust(x, method="centroid")))
+```
+
+I haven't started dabbling with changing the distance measure for the samples. That's where I stopped.
+

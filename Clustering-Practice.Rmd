@@ -1,0 +1,110 @@
+---
+title: "Untitled"
+author: "Taryn McLaughlin"
+date: "5/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(gplots)
+library(ggfortify)
+library(RColorBrewer)
+library(data.table)
+library(ggpubr)
+library(pcaMethods)
+library(cluster)
+library(knitr)
+library(heatmap.plus)
+library(stats)
+#Generate some data so you don't have to use my actual data because it's a mess
+data(diamonds)
+dfd<-diamonds
+dfd<-dplyr::select(diamonds, -cut, -color, -clarity)
+rows<-sample(1:53940, 100)
+dfd<-dfd[rows,]
+dfd<-data.matrix(dfd)
+
+lum<-read.csv("/Users/tarynam/Desktop/TH1 TH2_Taryn/Luminex_combined_background.txt")
+lum<-dplyr::select(lum, -X)
+lum$order<-paste(lum$SM, lum$Stim) 
+lum<-dplyr::arrange(lum, order) #so that the matrix is ordered first by SM and then within by Stim
+rownames(lum)<-lum$Sample
+```
+
+##Hierarchical Clustering
+Uses defaults of complete clustering using euclidean distance
+```{r}
+df<-data.matrix(lum[,2:10])
+hh <- dist(df) %>% hclust
+plot(as.dendrogram((hh)))
+
+
+dataMatrixOrdered <- df[hh$order, ]
+par(mfrow = c(1, 3))
+
+## Complete data
+image(t(dataMatrixOrdered)[, nrow(dataMatrixOrdered):1])
+
+## Show the row means
+plot(rowMeans(dataMatrixOrdered), 216:1, xlab = "Row Mean", ylab = "Row", pch = 19)
+## Show the column means
+plot(colMeans(dataMatrixOrdered), xlab = "Column", ylab = "Column Mean", pch = 19)
+
+```
+
+##K-means Clustering
+```{r}
+set.seed(1234)
+df<-lum[,2:10]
+km <- kmeans(df, 10, 15)
+lum$km<-factor(km$cluster)
+ggplot(lum, aes(x=Stim, y=km, col=SM))+geom_jitter(width=.3, height = 0, aes(alpha=0.5), size=2)
+
+par(mfrow = c(1, 2))
+image(t(df)[, nrow(df):1], yaxt = "n", main = "Original Data")
+image(t(df)[, order(km$cluster)], yaxt = "n", main = "Clustered Data")
+```
+
+##Principal Components Analysis
+```{r fig.width=12}
+df<-lum[,2:10]
+pca1 <- prcomp(df, scale = TRUE)
+pcas<-data.frame(pca1$x)
+rotations<-data.frame(pca1$rotation)
+rotations$cytokine<-row.names(rotations)
+melt<-melt(rotations, id.vars="cytokine")
+
+stims<-factor(lum$Stim)
+worms<-factor(lum$SM)
+ggplot(pcas, aes(x=pcas[,1], y=pcas[,2]))+geom_point(aes(col=worms))+labs(y="PCA2", x="PCA1")
+kable(rotations[,1:9])
+ggplot(melt, aes(x=cytokine, y=value, fill=variable))+geom_col()
+ggplot(melt, aes(x=variable, y=value, fill=cytokine))+geom_col()
+
+pca2 <- pca(df, scale = "uv", center = T, nPcs = 2, method = "svd")
+slplot(pca2, scoresLoadings = c(T,T))
+
+autoplot(prcomp(df), data = lum, colour = 'Stim',
+         loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 3)
+```
+
+#Common Factor Analysis
+setting the number of factors is completely arbitrary so you want to try a few and then look at the p-value for each. This p-value is for the hypothesis that the factor split model built is a "perfect fit". So lower means it doesn't fit well. There are caps on how many factors you can use based on the number of variables.
+
+```{r}
+nums<-1:5
+pvals<-c(factanal(df, 1)$PVAL, factanal(df, 2)$PVAL, factanal(df, 3)$PVAL, factanal(df, 4)$PVAL, factanal(df, 5)$PVAL)
+kable(cbind(nums, pvals))
+```
+
+We pick the 5-level one and explore the output.
+
+```{r}
+five<-factanal(df, 5)
+print(five, digits = 2, cutoff = .2, sort = TRUE)
+```
