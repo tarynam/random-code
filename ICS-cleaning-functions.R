@@ -64,7 +64,7 @@ fix.names<-function(datatable){
 
 
 changeTB<-function(datatable){
-    datatable$TB[datatable$Donor=="NK2813"]<-as.character("HC")
+    datatable$TB[datatable$Donor=="NK2183"]<-as.character("HC")
     datatable
 }
 
