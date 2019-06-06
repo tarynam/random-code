@@ -29,26 +29,37 @@ clean_flowjo_output<-function(datatable){
     
 }
 
+fix.ICSnames<-function(datatable){
+    datatable$Sample<-gsub("NK2522_LTBI__", "NK2522_LTBI_X_", datatable$Sample)
+    datatable$Sample<-gsub("NK2225_HC_SX", "NK2225_HC_SM", datatable$Sample)
+    datatable
+}
 #this is an easy way to make sure all the samples that Cheryl and I have decided to exclude get excluded from 
 #alllll the files. It also allows me to keep a running list of excluded samples
 remove_samples<-function(datatable){
     library(dplyr) #load it in the function to overcome namespace issues
     #since the sample name is unique, you can make a list of the ones you want excluded
-    excluded_samples<-c("NK2126_HC_X_SEA_005.fcs", 
-                        "NK2450_HC_SM_SEA_047.fcs" , 
-                        "NK2402_LTBI_SM_SWAP_024.fcs",
-                        "NK2342_TB_X_SWAP_006.fcs",
-                        "NK2136_TB_X_WCL_003.fcs",
-                        "NK2168_HC_SM_WCL_040.fcs",
-                        "NK2421_LTBI_SM_PEP_010.fcs",
-                        "NK2063_TB_X_SEA_005.fcs",
-                        "NK2115_LTBI_X_PEP_010.fcs",
-                        "NK2115_LTBI_X_WCL_009.fcs",
-                        "NK2171_HC_X_WCL_009.fcs",
-                        "NK2162_HC_X_SEA_023.fcs")
+    excluded_samples<-c("NK2126_HC_X_SEA", 
+                        "NK2450_HC_SM_SEA" , 
+                        "NK2402_LTBI_SM_SWAP",
+                        "NK2342_TB_X_SWAP",
+                        "NK2136_TB_X_WCL",
+                        "NK2168_HC_SM_WCL",
+                        "NK2421_LTBI_SM_PEP",
+                        "NK2063_TB_X_SEA",
+                        "NK2115_LTBI_X_PEP",
+                        "NK2115_LTBI_X_WCL",
+                        "NK2171_HC_X_WCL",
+                        "NK2162_HC_X_SEA")
     #then you filter the datatable so that any row that has that sample name is removed
     datatable<-filter(datatable, !(Sample %in% excluded_samples))%>%
-        filter(Donor!="NK2325")
+        filter(Donor!="NK2325", Donor!="NK2586")
+    datatable
+}
+
+remove_donors_ICS<-function(datatable){
+    library(dplyr) #load it in the function to overcome namespace issues
+    datatable<-filter(datatable, Donor!="NK2325", Donor!="NK2586")
     datatable
 }
 
@@ -62,9 +73,9 @@ fix.names<-function(datatable){
     datatable
 }
 
-
 changeTB<-function(datatable){
     datatable$TB[datatable$Donor=="NK2183"]<-as.character("HC")
+    datatable$SM[datatable$Donor=="NK2341"]<-as.character("X")
     datatable
 }
 
