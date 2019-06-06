@@ -7,6 +7,16 @@ library(reshape2)
 library(knitr)
 library(cowplot)
 
+mutate_TB<-function(df){
+    df$disease<-paste(df$TB, df$SM, sep=" ")
+    df$disease<-factor(df$disease, levels=c("HC X", "HC SM", "LTBI X", "LTBI SM", "TB X", "TB SM"))
+    df$TB<-gsub("LTBI", "QFT+", df$TB)
+    df<-filter(df, SM!="N", TB!="HC") 
+    df$SM<-factor(df$SM, levels=c("X","SM"))
+    df$TB<-factor(df$TB, levels=c("QFT+","TB"))
+    df
+}
+
 plot_filter<-function(datatable){
     library(dplyr)
     data<-filter(datatable, TB!="N")
@@ -15,7 +25,7 @@ plot_filter<-function(datatable){
     data
 }
 
-my_comparisons <- list(c("HC SM", "HC X"), c("LTBI SM", "LTBI X"), c("TB SM", "TB X"), 
+my_comparisons <- list(c("LTBI SM", "LTBI X"), c("TB SM", "TB X"), 
                        c("TB SM", "LTBI SM"), c("TB X", "LTBI X"))
 
 plot_compass<-function(DF, yval){
@@ -104,27 +114,6 @@ triple_boolean_plot<-function(datatable, antigen){
                        top=text_grob(paste("Cytokine Production from", antigen, sep=" "), size=24))
 }
 
-plot_hc<-function(data, xval, yval){
-    ggplot(data, aes(x=data[,xval], y=data[,yval]))+
-        geom_boxplot(size=1, position=position_dodge(width = 1), outlier.shape = NA, aes(fill=TB, alpha=SM)) +
-        geom_jitter(width=.1,height=0, shape=16,size=2)+
-        scale_fill_manual(values="#1a9850")+
-        scale_alpha_manual(values=c(0.5,1))+
-        scale_x_discrete(labels=c("SM-", "SM+"))+
-        theme_classic()+ 
-        theme(legend.position="none")+
-        theme(plot.subtitle = element_text(hjust = 0.5))+
-        theme(axis.text.x = element_text(angle=90, vjust=0.6)) + 
-        theme(text = element_text(size=12), axis.text.x = element_text(angle=90, vjust=0.6)) +   
-        stat_compare_means(label = "p.format", p.adjust.method = "fdr", hide.ns = TRUE, size = 4, 
-                           method="wilcox.test", paired = FALSE, label.y= (max(data[,yval])*1.1),
-                           label.x.npc = "center")+
-        labs(subtitle=paste("Frequency of", yval, "+ CD4+ T cells"), 
-             caption="",
-             x="",
-             y=paste("Frequency of ", yval, "+ CD4+ (%)"))
-}
-
 plot_6<-function(data, xval, yval){
     ggplot(data, aes(x=data[,xval], y=data[,yval]))+
         geom_boxplot(size=1, position=position_dodge(width = 1), outlier.shape = NA, aes(fill=TB, alpha=SM)) +
@@ -174,5 +163,36 @@ plot_compare<-function(data, xval, yval){
                            label.y = 1.1*(max(data[,yval], na.rm = TRUE)))+
         labs(y=paste(yval, "+ CD4+ (%)"), 
              x="")
+}
+
+plot_pbmc<-function(data, yval){
+    data[,yval]<-as.numeric(data[,yval])
+    ggplot(data, aes(x=SM, y=data[,yval]))+    
+    geom_boxplot(size=1, position=position_dodge(width = 1), outlier.shape = NA, aes(fill=TB, alpha=SM)) +
+    geom_jitter(width=.1,height=0, shape=16,size=2)+
+    scale_alpha_manual(values=c(0.5,0.5,1))+
+    scale_fill_manual(values = c("#e0e0e0", "#1a9850" , "#2166ac", "#b2182b"))+
+    theme_classic()+ theme(legend.position="none")+
+    theme(text = element_text(size=14)) +   
+    facet_grid(~TB, scales="free")+
+    labs(x="",
+         y="")
+}
+
+plot_pbmc.pairs<-function(data){
+    ggplot(data, aes(x=variable, y=value, color=TB, alpha=SM))+
+        geom_point(shape=16,size=2)+
+        geom_line(aes(group=Donor))+
+        scale_alpha_manual(values=c(0.5,0.5,1))+
+        scale_color_manual(values = c("#e0e0e0", "#1a9850" , "#2166ac", "#b2182b"))+
+        theme_classic()+ 
+        theme(legend.position="none")+
+        scale_x_discrete(labels=c("Pre", "Post"))+
+        theme(text = element_text(size=20)) + 
+        facet_grid(SM~TB, scales="free")+
+        stat_compare_means(label = "p.format", p.adjust.method = "fdr", hide.ns = TRUE, size = 6, 
+                           method="wilcox.test", paired = TRUE, 
+                           label.y = 1.1*(max(data$value, na.rm = TRUE)))+
+        labs(x="", y="")
 }
 
