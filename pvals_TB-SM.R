@@ -10,13 +10,13 @@ pvals_6<-function(data, column){
     #SM- to SM+
     x<-split(data,data$TB)
     #does a wilcox test between SM- and SM+ for whatever column you call in the column argument
-    A<-lapply(x, function(g) wilcox.test(g[,column]~g[,"SM"]))
+    A<-lapply(x, function(g) wilcox.test(g[,column]~g[,"SM"], exact=FALSE))
     
     
     #this one is trickier because wilcox.test can only have 2 levels so you have to
     #split by SM and then subset in each wilcox.test to only include 2 levels of TB
     y<-split(data,data$SM) 
-    C<- lapply(y, function(g) wilcox.test((g[,column]~g[,"TB"]), subset=g$TB %in% c("LTBI", "TB")))
+    C<- lapply(y, function(g) wilcox.test((g[,column]~g[,"TB"]), subset=g$TB %in% c("LTBI", "TB"), exact=FALSE))
 
     #extract the p value itself from each wilcox test
     pvals<-c(A$HC$p.value, A$LTBI$p.value, A$TB$p.value,
