@@ -29,11 +29,6 @@ clean_flowjo_output<-function(datatable){
     
 }
 
-fix.ICSnames<-function(datatable){
-    datatable$Sample<-gsub("NK2522_LTBI__", "NK2522_LTBI_X_", datatable$Sample)
-    datatable$Sample<-gsub("NK2225_HC_SX", "NK2225_HC_SM", datatable$Sample)
-    datatable
-}
 #this is an easy way to make sure all the samples that Cheryl and I have decided to exclude get excluded from 
 #alllll the files. It also allows me to keep a running list of excluded samples
 remove_samples<-function(datatable){
@@ -50,16 +45,17 @@ remove_samples<-function(datatable){
                         "NK2115_LTBI_X_PEP",
                         "NK2115_LTBI_X_WCL",
                         "NK2171_HC_X_WCL",
-                        "NK2162_HC_X_SEA")
+                        "NK2162_HC_X_SEA",
+                        "HD382_N_N_SEA")
     #then you filter the datatable so that any row that has that sample name is removed
     datatable<-filter(datatable, !(Sample %in% excluded_samples))%>%
-        filter(Donor!="NK2325", Donor!="NK2586")
+        filter(Donor!="NK2586") #data wildly unrelable in ICS
     datatable
 }
 
-remove_donors_ICS<-function(datatable){
+remove_donors<-function(datatable){
     library(dplyr) #load it in the function to overcome namespace issues
-    datatable<-filter(datatable, Donor!="NK2325", Donor!="NK2586")
+    datatable<-filter(datatable, Donor!="NK2325") #No SM data in primary files
     datatable
 }
 
@@ -76,6 +72,15 @@ fix.names<-function(datatable){
 changeTB<-function(datatable){
     datatable$TB[datatable$Donor=="NK2183"]<-as.character("HC")
     datatable$SM[datatable$Donor=="NK2341"]<-as.character("X")
+    datatable$SM[datatable$Donor=="NK2225"]<-as.character("X")
     datatable
 }
+
+changeHD<-function(datatable){
+    datatable$Donor[datatable$Donor=="HD474"]<-as.character("HD454")
+    datatable$Donor[datatable$Donor=="HD448"]<-as.character("HD488")
+    datatable
+}
+
+
 
