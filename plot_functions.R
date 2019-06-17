@@ -25,9 +25,6 @@ plot_filter<-function(datatable){
     data
 }
 
-my_comparisons <- list(c("LTBI SM", "LTBI X"), c("TB SM", "TB X"), 
-                       c("TB SM", "LTBI SM"), c("TB X", "LTBI X"))
-
 plot_compass<-function(DF, yval){
     library(dplyr)
     DF$disease<-paste(DF$TB, DF$SM, sep=" ")
@@ -61,9 +58,9 @@ plot_with_all_stats<-function(DF, antigen, yval){
         stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
 }
 
-triple_boolean_plot<-function(datatable, antigen){
+triple_boolean_plot<-function(datatable){
     library(dplyr)
-    DF<-dplyr::filter(datatable, Stim==antigen)
+    DF<-datatable
     Boolean<-dplyr::select(DF, Donor, TB, SM, Stim, G_4_13_T, G_4_x_T, G_x_13_T, G_4_13_x, x_4_13_T, G_4_x_x, G_x_13_x, x_4_x_T, x_x_13_T, G_x_x_T , G_x_x_x, x_x_x_T,  x_4_13_x, x_4_x_x, x_x_13_x)%>%
         dplyr::filter(TB!="N")
     melt<-melt(Boolean,id.vars=c("Donor","TB","SM", "Stim"))
@@ -111,7 +108,7 @@ triple_boolean_plot<-function(datatable, antigen){
                            method="wilcox.test", paired = FALSE)
     
     plot<-grid.arrange(g1, g2, g3, ncol=3, widths=c(8,4,4),
-                       top=text_grob(paste("Cytokine Production from", antigen, sep=" "), size=24))
+                       top=text_grob("Cytokine Production", size=24))
 }
 
 plot_6<-function(data, xval, yval){
@@ -130,18 +127,19 @@ plot_6<-function(data, xval, yval){
 }
 
 plot_2<-function(data, xval, yval){
+    my_comparisons <- list(c("LTBI SM", "LTBI X"), c("TB SM", "TB X"), 
+                           c("TB SM", "LTBI SM"), c("TB X", "LTBI X"))
     ggplot(data, aes(x=data[,xval], y=data[,yval]))+
         geom_boxplot(size=1, position=position_dodge(width = 1), outlier.shape = NA, aes(fill=TB, alpha=SM)) +
         geom_jitter(width=.1,height=0, shape=16,size=2)+
         scale_fill_manual(values =c("#2166ac", "#b2182b"))+
         scale_alpha_manual(values=c(0.5,1))+
-        scale_x_discrete(labels=c("SM-", "SM+"))+
+        scale_x_discrete(labels=c("QFT+SM-", "QFT+SM+", "TB SM-","TB SM+"))+
         theme_classic()+ theme(legend.position="none")+
-        theme(axis.text.x = element_text(angle=90, vjust=0.6)) + 
-        theme(text = element_text(size=20), axis.text.x = element_text(angle=90, vjust=0.6)) +   
-        facet_grid(~TB, scale="free")+
-        stat_compare_means(label = "p.format", p.adjust.method = "fdr", hide.ns = TRUE, size = 4, 
-                           method="wilcox.test", paired = FALSE, label.y= (max(data[,yval], na.rm=TRUE)*1.1), na.rm=TRUE)+
+        theme(plot.title = element_text(hjust = 0.5))+
+        theme(text = element_text(size=20)) +   
+        stat_compare_means(comparisons=my_comparisons, aes(label=..p.adj..), label = "p.format", p.adjust.method = "fdr", hide.ns = TRUE, size = 4, 
+                           method="wilcox.test", paired = FALSE, na.rm=TRUE)+
         labs(title="", 
              x="",
              y=yval)}
@@ -155,6 +153,7 @@ plot_compare<-function(data, xval, yval){
         scale_fill_manual(values =c("#2166ac", "#b2182b"))+
         scale_alpha_manual(values=c(0.5,1))+
         theme_classic()+ theme(legend.position="none")+
+        theme(plot.title = element_text(hjust = 0.5))+
         theme(text = element_text(size=20), axis.text.x = element_text(angle=30, vjust=0.6)) + 
         theme(strip.text.x = element_blank())+
         facet_grid(~TB+SM, scale="free")+
@@ -196,3 +195,15 @@ plot_pbmc.pairs<-function(data){
         labs(x="", y="")
 }
 
+plot_stim<-function(data, yval){
+    ggplot(data, aes(y=data[,yval], x=Stim, col=TB))+
+        geom_point(size=3, alpha=0.5)+geom_line(aes(group=Donor))+
+        scale_color_manual(values =c("#2166ac", "#b2182b"))+
+        theme_bw()+ theme(legend.position="none")+
+        theme(text = element_text(size=20)) + 
+        facet_grid(SM~TB)+
+        stat_compare_means(comparisons = list(c("PMA", "PEP"), c("PMA","WCL"))
+            , na.rm=TRUE, size=4, label.y.npc = 1)+
+        coord_cartesian(ylim=c(0,1.25*(max(data[,yval], na.rm=TRUE))))+
+        labs(y= yval)
+}
