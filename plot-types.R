@@ -22,6 +22,12 @@ df3$variable<-factor(df3$variable, levels=c('TH2.Freq','TH1.2.Freq','TH1.Freq',o
 df3$Label <- paste(df3$TB, df3$SM, sep='_')
 
 
+df3$upper[df3$variable=="TH1.2.Freq" & df3$Label=="HC_X"]<-
+    df3$median[df3$variable=="TH1.2.Freq" & df3$Label=="HC_X"]+
+    df3$median[df3$variable=="TH1.Freq" & df3$Label=="HC_X"]+
+    df3$error[df3$variable=="TH1.2.Freq" & df3$Label=="HC_X"]
+
+
 g<-ggplot(df3, aes(SM, median))
 
 g+ geom_bar(aes(fill = factor(variable)), stat="identity", width = 0.7) +
