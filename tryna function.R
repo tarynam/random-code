@@ -22,7 +22,7 @@ replace.btwn.tables<-function(datatable1, datatable2, id.1, id.2, new.var, new.v
     tbl1a <- arrange(tbl1a, tbl1a[,id.1])
     tbl2  <- subset(datatable2, datatable2[,id.2] %in% inter)
     tbl2 <- arrange(tbl2, tbl2[,id.2])
-    
+    tbl1a[,new.var]<-as.character(tbl1a[,new.var])
     
     tbl1a[,new.var] <- replace(x = tbl1a[,new.var], #replace the column you want in table 1
                                list = (tbl1a[,id.1] %in% tbl2[,id.2]), #link id variables in both tables
