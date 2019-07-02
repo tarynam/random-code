@@ -41,20 +41,24 @@ plot_compass<-function(DF, yval){
         stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
 }
 
-plot_with_all_stats<-function(DF, antigen, yval){
+plot_with_all_stats<-function(DF, yval){
     
-    DF<-dplyr::filter(DF, TB != "N" & Stim == antigen)
+    DF<-dplyr::filter(DF, TB != "N")
     DF$disease<-paste(DF$TB, DF$SM, sep=" ")
     DF$disease<-factor(DF$disease, levels=c("HC X", "HC SM", "LTBI X", "LTBI SM", "TB X", "TB SM"))
     
+    my_comparisons <- list(c("HC SM", "HC X"), 
+                           c("LTBI SM", "LTBI X"), c("TB SM", "TB X"), 
+                           c("TB SM", "LTBI SM"), c("TB X", "LTBI X"))        
+   
     g<-ggplot(DF, aes(x=disease, y=DF[,yval]))
-    g+    geom_boxplot(aes(fill=TB, alpha=SM), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
+    g+  geom_boxplot(aes(fill=TB, alpha=SM), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
         geom_jitter(width=.1,height=0, shape=16,size=2)+
         scale_alpha_manual(values=c(0.5,1))+
         scale_fill_manual(values = c("#1a9850" , "#2166ac", "#b2182b"))+
         theme_classic()+ theme(legend.position="none")+
-        theme(text = element_text(size=20), axis.text.x = element_text(angle=90, vjust=0.6)) + 
-        theme(plot.title = element_text(hjust = 0.5)) +
+        theme(text = element_text(size=16)) + 
+        theme(plot.subtitle = element_text(hjust = 0.5)) +
         stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
 }
 
@@ -137,8 +141,9 @@ plot_2<-function(data, xval, yval){
         scale_x_discrete(labels=c("QFT+SM-", "QFT+SM+", "TB SM-","TB SM+"))+
         theme_classic()+ theme(legend.position="none")+
         theme(plot.title = element_text(hjust = 0.5))+
-        theme(text = element_text(size=20)) +   
-        stat_compare_means(comparisons=my_comparisons, aes(label=..p.adj..), label = "p.format", p.adjust.method = "fdr", hide.ns = TRUE, size = 4, 
+        theme(text = element_text(size=14)) +   
+        stat_compare_means(comparisons=my_comparisons, aes(label=..p.adj..), 
+                           label = "p.format", p.adjust.method = "fdr", hide.ns = TRUE, size = 5, 
                            method="wilcox.test", paired = FALSE, na.rm=TRUE)+
         labs(title="", 
              x="",
@@ -203,7 +208,6 @@ plot_stim<-function(data, yval){
         theme(text = element_text(size=20)) + 
         facet_grid(SM~TB)+
         stat_compare_means(comparisons = list(c("PMA", "PEP"), c("PMA","WCL"))
-            , na.rm=TRUE, size=4, label.y.npc = 1)+
-        coord_cartesian(ylim=c(0,1.25*(max(data[,yval], na.rm=TRUE))))+
+            , na.rm=TRUE, size=4, label.y.npc = .9)+
         labs(y= yval)
 }
