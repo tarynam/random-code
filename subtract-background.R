@@ -1,3 +1,7 @@
+install.packages("dplyr")
+install.packages("data.table")
+
+
 #used to generate a list of character strings that are the names of the columns containing numeric data
 numeric.only <- function(X,...){
     returnCols <- names(X)
@@ -16,10 +20,10 @@ background.subtract<-function(df, splitvar, keyvar, condition){
     #a list that is sorted alphabetically
     dt<-split(df, df[, splitvar]) #generate a list of mini data frames for each level of splitvar
     
+    colnms<-numeric.only(df) ## **********YOU WILL NEED TO CHAGNE THIS FOR REAL DATA ******
+    
     #colnms is a list of character strings indicating which columns to subtract background from
     #here I use a function to give me all the names of numeric columns but I could also specify
-    colnms<-numeric.only(df)
-    
     #for each column name in the list of column names
     for(col in colnms){
         #this is a check to make sure it goes through all the columns
