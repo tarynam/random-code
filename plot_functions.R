@@ -17,6 +17,29 @@ mutate_TB<-function(df){
     df
 }
 
+filter_tb<-function(df){
+    df$SM<-gsub("SM", "SM+", df$SM)
+    df$SM<-gsub("X", "SM-", df$SM)
+    df<-filter(df, SM!="N", TB=="TB")
+    df$SM<-factor(df$SM, levels=c("SM-","SM+"))
+    df$TB<-factor(df$TB, levels=c("TB"))
+    df$disease<-paste(df$TB, df$SM, sep=" ")
+    df$disease<-factor(df$disease, levels=c("TB SM-", "TB SM+"))
+    df
+}
+
+filter_ltbi<-function(df){
+    df$SM<-gsub("SM", "SM+", df$SM)
+    df$SM<-gsub("X", "SM-", df$SM)
+    df<-filter(df, SM!="N", TB=="LTBI")
+    df$SM<-gsub("LTBI", "QFT+", df$SM)
+    df$SM<-factor(df$SM, levels=c("SM-","SM+"))
+    df$TB<-factor(df$TB, levels=c("QFT+"))
+    df$disease<-paste(df$TB, df$SM, sep=" ")
+    df$disease<-factor(df$disease, levels=c("QFT+ SM-", "QFT+ SM+"))
+    df
+} 
+
 plot_filter<-function(datatable){
     library(dplyr)
     data<-filter(datatable, TB!="N")
