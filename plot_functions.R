@@ -25,6 +25,7 @@ filter_tb<-function(df){
     df$TB<-factor(df$TB, levels=c("TB"))
     df$disease<-paste(df$TB, df$SM, sep=" ")
     df$disease<-factor(df$disease, levels=c("TB SM-", "TB SM+"))
+    names(df)<-gsub("Tbet", "T-bet", names(df))
     df
 }
 
@@ -32,20 +33,54 @@ filter_ltbi<-function(df){
     df$SM<-gsub("SM", "SM+", df$SM)
     df$SM<-gsub("X", "SM-", df$SM)
     df<-filter(df, SM!="N", TB=="LTBI")
-    df$SM<-gsub("LTBI", "QFT+", df$SM)
     df$SM<-factor(df$SM, levels=c("SM-","SM+"))
-    df$TB<-factor(df$TB, levels=c("QFT+"))
     df$disease<-paste(df$TB, df$SM, sep=" ")
-    df$disease<-factor(df$disease, levels=c("QFT+ SM-", "QFT+ SM+"))
+    df$disease<-factor(df$disease, levels=c("LTBI SM-", "LTBI SM+"))
+    names(df)<-gsub("Tbet", "T-bet", names(df))
     df
 } 
 
+filter_hc<-function(df){
+    df$SM<-gsub("SM", "SM+", df$SM)
+    df$SM<-gsub("X", "SM-", df$SM)
+    df<-filter(df, SM!="N", TB=="HC")
+    df$SM<-factor(df$SM, levels=c("SM-","SM+"))
+    df$disease<-paste(df$TB, df$SM, sep=" ")
+    df$disease<-factor(df$disease, levels=c("HC SM-", "HC SM+"))
+    names(df)<-gsub("Tbet", "T-bet", names(df))
+    df
+}
+
 plot_filter<-function(datatable){
     library(dplyr)
-    data<-filter(datatable, TB!="N")
-    data$TB<-factor(data$TB, levels=c("HC","LTBI","TB"))
-    data$SM<-factor(data$SM, levels=c("X","SM"))
-    data
+    df<-filter(datatable, TB!="N")
+    df$TB<-factor(df$TB, levels=c("HC","LTBI","TB"))
+    df$SM<-gsub("SM", "SM+", df$SM)
+    df$SM<-gsub("X", "SM-", df$SM)
+    df$SM<-factor(df$SM, levels=c("SM-","SM+"))
+    df$disease<-paste(df$TB, df$SM, sep=" ")
+    df$disease<-factor(df$disease, levels=c("HC SM-", "HC SM+",
+                                            "LTBI SM-", "LTBI SM+",
+                                            "TB SM-", "TB SM+"))
+    names(df)<-gsub("Tbet", "T-bet", names(df))
+    df
+}
+
+
+filter_all<-function(datatable){
+    library(dplyr)
+    df<-datatable
+    df$TB<-factor(df$TB, levels=c("N","HC","LTBI","TB"))
+    df$SM<-gsub("SM", "SM+", df$SM)
+    df$SM<-gsub("X", "SM-", df$SM)
+    df$SM<-factor(df$SM, levels=c("N","SM-","SM+"))
+    df$disease<-paste(df$TB, df$SM, sep=" ")
+    df$disease<-gsub("N N", "Naive", df$disease)
+    df$disease<-factor(df$disease, levels=c("Naive","HC SM-", "HC SM+",
+                                            "LTBI SM-", "LTBI SM+",
+                                            "TB SM-", "TB SM+"))
+    names(df)<-gsub("Tbet", "T-bet", names(df))
+    df
 }
 
 plot_compass<-function(DF, yval){
@@ -70,9 +105,9 @@ plot_with_all_stats<-function(DF, yval){
     DF$disease<-paste(DF$TB, DF$SM, sep=" ")
     DF$disease<-factor(DF$disease, levels=c("HC X", "HC SM", "LTBI X", "LTBI SM", "TB X", "TB SM"))
     
-    my_comparisons <- list(c("HC SM", "HC X"), 
-                           c("LTBI SM", "LTBI X"), c("TB SM", "TB X"), 
-                           c("TB SM", "LTBI SM"), c("TB X", "LTBI X"))        
+    my_comparisons <- list(c("HC SM", "HC X"),c("LTBI SM", "LTBI X"), c("TB SM", "TB X"), 
+                           c("TB SM", "LTBI SM"), c("TB X", "LTBI X"),
+                           c("HC SM", "LTBI SM"), c("HC X", "LTBI X"))        
    
     g<-ggplot(DF, aes(x=disease, y=DF[,yval]))
     g+  geom_boxplot(aes(fill=TB, alpha=SM), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
@@ -83,6 +118,61 @@ plot_with_all_stats<-function(DF, yval){
         theme(text = element_text(size=16)) + 
         theme(plot.subtitle = element_text(hjust = 0.5)) +
         stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
+}
+
+plot_3<-function(DF, yval){
+    
+    DF<-dplyr::filter(DF, TB != "N")
+    
+    my_comparisons <- list(c("HC","LTBI"), 
+                           c("TB", "LTBI"), 
+                           c("HC", "TB"))      
+    
+    g<-ggplot(DF, aes(x=TB, y=DF[,yval]))
+    g+  geom_boxplot(aes(fill=TB), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
+        geom_jitter(width=.1,height=0, shape=16,size=2)+
+        scale_alpha_manual(values=c(0.5,1))+
+        scale_fill_manual(values = c("#1a9850" , "#2166ac", "#b2182b"))+
+        theme_classic()+ theme(legend.position="none")+
+        theme(text = element_text(size=16)) + 
+        theme(plot.subtitle = element_text(hjust = 0.5)) +
+        stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
+}
+
+plot_3<-function(DF, yval){
+    
+    DF<-dplyr::filter(DF, TB != "N")
+    
+    my_comparisons <- list(c("HC","LTBI"), 
+                           c("TB", "LTBI"), 
+                           c("HC", "TB"))      
+    
+    g<-ggplot(DF, aes(x=TB, y=DF[,yval]))
+    g+  geom_boxplot(aes(fill=TB), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
+        geom_jitter(width=.1,height=0, shape=16,size=2)+
+        scale_alpha_manual(values=c(0.5,1))+
+        scale_fill_manual(values =c("#00AFBB", "#E7B800", "#FC4E07"))+
+        theme_classic()+ theme(legend.position="none")+
+        theme(text = element_text(size=16)) + 
+        theme(plot.subtitle = element_text(hjust = 0.5)) +
+        stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
+}
+
+
+plot_cell<-function(DF, yval){
+    
+    my_comparisons <- list(c("CD4","CD8"), 
+                           c("CD8", "GD"), 
+                           c("CD4", "GD"))      
+    
+    g<-ggplot(DF, aes(x=celltype, y=DF[,yval]))
+    g+  geom_boxplot(aes(fill=TB), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
+        geom_jitter(width=.1,height=0, shape=16,size=2)+
+        scale_fill_manual(values =c("N" = "#da70d6","HC" = "#00AFBB", "LTBI" = "#E7B800","TB"="#FC4E07"))+
+        theme_classic()+ theme(legend.position="none")+
+        theme(text = element_text(size=16)) + 
+        theme(plot.subtitle = element_text(hjust = 0.5)) +
+        stat_compare_means(comparisons = my_comparisons)
 }
 
 triple_boolean_plot<-function(datatable){
