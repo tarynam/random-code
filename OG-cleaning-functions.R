@@ -27,6 +27,12 @@ clean_ognames<-function(datatable){
     datatable
 }
 
+cleanvariablenames<-function(datatable){
+    newnames<-gsub("_freq", "", names(datatable))
+    names(datatable)<-newnames
+    datatable
+}
+
 split_og<-function(df){
     library(data.table)
     l<-tstrsplit(df$Sample, "_")
@@ -42,19 +48,22 @@ split_og<-function(df){
 sum_boolean<-function(df){
     library(dplyr)
     df2<-dplyr::mutate(df,
-            Tbet=  rowSums(df[,grep("t_._._.", names(df))]),
-            CCR4=  rowSums(df[,grep("._._._4", names(df))]),
-            CXCR3=  rowSums(df[,grep("._._3_.", names(df))]),
-            GATA3=  rowSums(df[,grep("._g_._.", names(OG_CD4_bulk_summary.csv))]),
             TbetCXCR3=  rowSums(df[,grep("t_._3_.", names(df))]),
             TbetCCR4=  rowSums(df[,grep("t_._._4", names(df))]),
             GATA3CXCR3=  rowSums(df[,grep("._g_3_.", names(df))]),
-            GATA3CCR4=  rowSums(df[,grep("._g_._4", names(df))]),
-            CXCR3.Tbetprop = 100*TbetCXCR3/Tbet,
-            CCR4.Tbetprop = 100*TbetCCR4/Tbet,
-            CXCR3.GATA3prop= 100*GATA3CXCR3/GATA3,
-            CCR4.GATA3prop= 100*GATA3CCR4/GATA3
+            GATA3CCR4=  rowSums(df[,grep("._g_._4", names(df))])
 )
+    df2
+}
+
+sum_boolean2<-function(df){
+    library(dplyr)
+    df2<-dplyr::mutate(df,
+        CXCR3.Tbetprop = 100*TbetCXCR3/Tbet,
+        CCR4.Tbetprop = 100*TbetCCR4/Tbet,
+        CXCR3.GATA3prop= 100*GATA3CXCR3/GATA3,
+        CCR4.GATA3prop= 100*GATA3CCR4/GATA3
+    )
     df2
 }
 
