@@ -139,23 +139,25 @@ plot_3<-function(DF, yval){
         stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
 }
 
-plot_3<-function(DF, yval){
-    
-    DF<-dplyr::filter(DF, TB != "N")
-    
-    my_comparisons <- list(c("HC","LTBI"), 
+plot_3<-function(DF, yval, xval){
+
+    my_comparisons <- list(c("N", "HC"),
+                           c("N", "LTBI"),
+                           c("N", "TB"),
+                           c("HC","LTBI"), 
                            c("TB", "LTBI"), 
                            c("HC", "TB"))      
     
-    g<-ggplot(DF, aes(x=TB, y=DF[,yval]))
-    g+  geom_boxplot(aes(fill=TB), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
+    g<-ggplot(DF, aes(x=DF[,xval], y=DF[,yval]))
+    g+  geom_boxplot(aes(fill=DF[,xval]), size=1, position=position_dodge(width = 1), outlier.shape=NA)+
         geom_jitter(width=.1,height=0, shape=16,size=2)+
         scale_alpha_manual(values=c(0.5,1))+
-        scale_fill_manual(values =c("#00AFBB", "#E7B800", "#FC4E07"))+
+        scale_fill_manual(values =c("N" = "#da70d6","HC" = "#00AFBB", "LTBI" = "#E7B800","TB"="#FC4E07",
+                                    "X" = "#00AFBB", "SM" = "#E7B800"))+
         theme_classic()+ theme(legend.position="none")+
         theme(text = element_text(size=16)) + 
         theme(plot.subtitle = element_text(hjust = 0.5)) +
-        stat_compare_means(comparisons = my_comparisons, p.adjust="bonferroni")
+        stat_compare_means(comparisons = my_comparisons)
 }
 
 
@@ -172,7 +174,7 @@ plot_cell<-function(DF, yval){
         theme_classic()+ theme(legend.position="none")+
         theme(text = element_text(size=16)) + 
         theme(plot.subtitle = element_text(hjust = 0.5)) +
-        stat_compare_means(comparisons = my_comparisons)
+        stat_compare_means(comparisons = my_comparisons, label="p.signif")
 }
 
 triple_boolean_plot<-function(datatable){
@@ -324,3 +326,71 @@ plot_stim<-function(data, yval){
             , na.rm=TRUE, size=4, label.y.npc = .9)+
         labs(y= yval)
 }
+
+
+baseplot<-function(data, xval, yval, colors){
+    ggplot(data, aes(data[,xval], data[,yval], fill=SM))+
+        geom_boxplot(size=1, position=position_dodge(width = 1), outlier.shape = NA)+
+        scale_fill_manual(values = colors)+
+        theme_classic()+ theme(legend.position="none")+
+        theme(panel.border = element_rect(fill = NA, colour = "black"))+
+        theme(text = element_text(size=20),
+              axis.text.x = element_text(size = 16),
+              strip.text = element_text(size = 20))+
+        theme(plot.title = element_text(hjust = 0.5, size=20)) +
+        labs(x="", y="")
+}
+
+booleanplot<-function(data, xval, yval, colors){
+    ggplot(data, aes(data[,xval], data[,yval], fill=SM))+
+        geom_boxplot(size=1, position=position_dodge(width = 1), outlier.shape = NA)+
+        scale_fill_manual(values = colors)+
+        theme_classic()+ 
+        theme(legend.position="none")+
+        theme(text = element_text(size=20), 
+              axis.text.x = element_text(size=20), 
+              strip.text = element_text(size = 20))+
+        theme(plot.title = element_text(hjust = 0.5, size=20)) +
+        stat_compare_means(method="wilcox.test", label="p.signif", hide.ns = TRUE, size=10)+
+        labs(x="", y="")
+}
+
+booleanplot2<-function(data, xval, yval, colors){
+    ggplot(data, aes(data[,xval], data[,yval], fill=disease))+
+        geom_boxplot(size=1, position=position_dodge(width = 1), outlier.shape = NA)+
+        scale_fill_manual(values = colors)+
+        theme_classic()+ 
+        theme(legend.position="none")+
+        theme(text = element_text(size=20), 
+              axis.text.x = element_text(size=20),
+              strip.text = element_text(size = 20))+
+        theme(plot.title = element_text(hjust = 0.5, size=20)) +
+        labs(x="", y="")
+}
+
+allplot<-function(data, xval, yval, colors){
+    ggplot(data, aes(data[,xval], data[,yval], fill=disease))+
+        geom_boxplot(size=1, position=position_dodge2(width=0.2, padding = 0.2, preserve = "single"), outlier.shape = NA)+
+        scale_fill_manual(values = colors)+
+        theme_classic()+ 
+        theme(legend.position="none") +
+        theme(panel.border = element_rect(fill = NA, colour = "black"))+
+        facet_wrap(~variable)+
+        theme(text = element_text(size=20),
+              axis.text.x = element_text(size = 16),
+              strip.text = element_text(size = 20))+
+        theme(plot.title = element_text(hjust = 0.5, size=20))+
+        labs(x="", y="")
+}
+
+cyt_groups <- as_labeller(c("IFNg" = "IFNγ", 
+                            "TNFa" = "TNFα", "IL4" = "IL-4", "IL13" = "IL-13"))
+
+all_comps<-list(c("HC SM+", "HC SM-"),c("LTBI SM+", "LTBI SM-"), c("TB SM+", "TB SM-")) 
+
+healthy.cols<- c("SM+" = "#1a9850", "SM-" ="#91cf60")
+ltbi.cols<- c("SM+" = "#2166ac", "SM-" = "#85ABD1")
+tb.cols<- c("SM+" = "#b2182b", "SM-"="#E59EA6")
+all.cols<- c("Naive" = "#C8D0D8","HC SM+" = "#1a9850", "HC SM-" ="#91cf60",
+             "LTBI SM+" = "#2166ac", "LTBI SM-" = "#85ABD1",
+             "TB SM+" = "#b2182b", "TB SM-"="#E59EA6")

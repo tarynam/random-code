@@ -2,6 +2,7 @@ remove_samples<-function(datatable){
     library(dplyr) #load it in the function to overcome namespace issues
     #since the sample name is unique, you can make a list of the ones you want excluded
     excluded_samples<-c("NK2095_LTBI_X.SEA")
+    excluded_samples<-c("NK2208B_TB_SM.SEA")
     #then you filter the datatable so that any row that has that sample name is removed
     datatable<-filter(datatable, !(Sample %in% excluded_samples))#data wildly unrelable in ICS
     datatable
@@ -10,6 +11,9 @@ remove_samples<-function(datatable){
 remove_donors<-function(datatable){
     library(dplyr) #load it in the function to overcome namespace issues
     datatable<-filter(datatable, Donor!="NK2325") #No SM data in primary files
+    datatable<-filter(datatable, Donor!="HD382") #No SM data in primary files
+    datatable<-filter(datatable, Donor!="HD479") #No SM data in primary files
+    datatable<-filter(datatable, Donor!="HD487") #No SM data in primary files
     datatable
 }
 
@@ -41,7 +45,7 @@ split_og<-function(df){
     df$SM<-l[[3]]
     df$SM<-gsub(".PEP|.WCL|.SEB|.UN|.SEA|.SWAP", "", df$SM)
     df$Stim<-l[[3]]
-    df$Stim<-gsub("X.|SM.", "", df$Stim)
+    df$Stim<-gsub("X.|SM.|N.", "", df$Stim)
     df
 }
 
@@ -51,10 +55,16 @@ sum_boolean<-function(df){
             TbetCXCR3=  rowSums(df[,grep("t_._3_.", names(df))]),
             TbetCCR4=  rowSums(df[,grep("t_._._4", names(df))]),
             GATA3CXCR3=  rowSums(df[,grep("._g_3_.", names(df))]),
-            GATA3CCR4=  rowSums(df[,grep("._g_._4", names(df))])
-)
+            GATA3CCR4=  rowSums(df[,grep("._g_._4", names(df))]),
+            cyt=  T_G_4 + T_G_x + T_x_4 + T_x_x + x_G_4 + x_G_x + x_x_4,
+            CXCR3.Tbetprop = 100*TbetCXCR3/Tbet,
+            CCR4.Tbetprop = 100*TbetCCR4/Tbet,
+            CXCR3.GATA3prop= 100*GATA3CXCR3/GATA3,
+            CCR4.GATA3prop= 100*GATA3CCR4/GATA3
+    )
     df2
 }
+
 
 sum_boolean2<-function(df){
     library(dplyr)
